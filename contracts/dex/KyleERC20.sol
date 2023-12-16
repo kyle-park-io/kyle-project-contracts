@@ -3,8 +3,6 @@ pragma solidity ^0.8.20;
 
 import './interfaces/IKyleERC20.sol';
 
-import 'hardhat/console.sol';
-
 contract KyleERC20 is IKyleERC20 {
   string public constant name = 'Kyle LPs';
   string public constant symbol = 'Kyle-LP';

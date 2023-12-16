@@ -19,7 +19,7 @@ contract Factory is IFactory {
     feeToSetter = msg.sender;
   }
 
-  function allPairsLength() external view returns (uint) {
+  function allPairsLength() external view returns (uint256) {
     return allPairs.length;
   }
 

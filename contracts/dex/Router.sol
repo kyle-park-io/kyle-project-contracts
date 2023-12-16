@@ -63,17 +63,17 @@ contract Router is IRouter {
 
   function addLiquidityETH(
     address token,
-    uint amountTokenDesired,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 amountTokenDesired,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline
+    uint256 deadline
   )
     external
     payable
     override
     ensure(deadline)
-    returns (uint amountToken, uint amountETH, uint liquidity)
+    returns (uint256 amountToken, uint256 amountETH, uint256 liquidity)
   {
     (amountToken, amountETH) = _addLiquidity(
       token,
@@ -140,15 +140,20 @@ contract Router is IRouter {
   function removeLiquidity(
     address tokenA,
     address tokenB,
-    uint liquidity,
-    uint amountAMin,
-    uint amountBMin,
+    uint256 liquidity,
+    uint256 amountAMin,
+    uint256 amountBMin,
     address to,
-    uint deadline
-  ) public override ensure(deadline) returns (uint amountA, uint amountB) {
+    uint256 deadline
+  )
+    public
+    override
+    ensure(deadline)
+    returns (uint256 amountA, uint256 amountB)
+  {
     address pair = Library.pairFor(factory, tokenA, tokenB);
     Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-    (uint amount0, uint amount1) = IPair(pair).burn(to);
+    (uint256 amount0, uint256 amount1) = IPair(pair).burn(to);
     (address token0, ) = Library.sortTokens(tokenA, tokenB);
     (amountA, amountB) = tokenA == token0
       ? (amount0, amount1)
@@ -159,16 +164,16 @@ contract Router is IRouter {
 
   function removeLiquidityETH(
     address token,
-    uint liquidity,
-    uint amountTokenMin,
-    uint amountETHMin,
+    uint256 liquidity,
+    uint256 amountTokenMin,
+    uint256 amountETHMin,
     address to,
-    uint deadline
+    uint256 deadline
   )
     public
     override
     ensure(deadline)
-    returns (uint amountToken, uint amountETH)
+    returns (uint256 amountToken, uint256 amountETH)
   {
     (amountToken, amountETH) = removeLiquidity(
       token,
@@ -183,5 +188,158 @@ contract Router is IRouter {
     TransferHelper.safeTransfer(token, to, amountToken);
     IWETH(WETH).withdraw(amountETH);
     TransferHelper.safeTransferETH(to, amountETH);
+  }
+
+  function swapExactTokensForTokens(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external override ensure(deadline) returns (uint[] memory amounts) {
+    amounts = Library.getAmountsOut(factory, amountIn, path);
+    require(
+      amounts[amounts.length - 1] >= amountOutMin,
+      'Router: INSUFFICIENT_OUTPUT_AMOUNT'
+    );
+    TransferHelper.safeTransferFrom(
+      path[0],
+      msg.sender,
+      Library.pairFor(factory, path[0], path[1]),
+      amounts[0]
+    );
+    _swap(amounts, path, to);
+  }
+
+  function swapTokensForExactTokens(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external override ensure(deadline) returns (uint[] memory amounts) {
+    amounts = Library.getAmountsIn(factory, amountOut, path);
+    require(amounts[0] <= amountInMax, 'Router: EXCESSIVE_INPUT_AMOUNT');
+    TransferHelper.safeTransferFrom(
+      path[0],
+      msg.sender,
+      Library.pairFor(factory, path[0], path[1]),
+      amounts[0]
+    );
+    _swap(amounts, path, to);
+  }
+
+  function swapExactTokensForETH(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external override ensure(deadline) returns (uint[] memory amounts) {
+    require(path[path.length - 1] == WETH, 'Router: INVALID_PATH');
+    amounts = Library.getAmountsOut(factory, amountIn, path);
+    require(
+      amounts[amounts.length - 1] >= amountOutMin,
+      'Router: INSUFFICIENT_OUTPUT_AMOUNT'
+    );
+    TransferHelper.safeTransferFrom(
+      path[0],
+      msg.sender,
+      Library.pairFor(factory, path[0], path[1]),
+      amounts[0]
+    );
+    _swap(amounts, path, address(this));
+    IWETH(WETH).withdraw(amounts[amounts.length - 1]);
+    TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
+  }
+
+  function swapTokensForExactETH(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external override ensure(deadline) returns (uint[] memory amounts) {
+    require(path[path.length - 1] == WETH, 'Router: INVALID_PATH');
+    amounts = Library.getAmountsIn(factory, amountOut, path);
+    require(amounts[0] <= amountInMax, 'Router: EXCESSIVE_INPUT_AMOUNT');
+    TransferHelper.safeTransferFrom(
+      path[0],
+      msg.sender,
+      Library.pairFor(factory, path[0], path[1]),
+      amounts[0]
+    );
+    _swap(amounts, path, address(this));
+    IWETH(WETH).withdraw(amounts[amounts.length - 1]);
+    TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
+  }
+
+  function swapExactETHForTokens(
+    uint256 amountOutMin,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external payable override ensure(deadline) returns (uint[] memory amounts) {
+    require(path[0] == WETH, 'Router: INVALID_PATH');
+    amounts = Library.getAmountsOut(factory, msg.value, path);
+    require(
+      amounts[amounts.length - 1] >= amountOutMin,
+      'Router: INSUFFICIENT_OUTPUT_AMOUNT'
+    );
+    IWETH(WETH).deposit{value: amounts[0]}();
+    assert(
+      IWETH(WETH).transfer(
+        Library.pairFor(factory, path[0], path[1]),
+        amounts[0]
+      )
+    );
+    _swap(amounts, path, to);
+  }
+
+  function swapETHForExactTokens(
+    uint256 amountOut,
+    address[] calldata path,
+    address to,
+    uint256 deadline
+  ) external payable override ensure(deadline) returns (uint[] memory amounts) {
+    require(path[0] == WETH, 'Router: INVALID_PATH');
+    amounts = Library.getAmountsIn(factory, amountOut, path);
+    require(amounts[0] <= msg.value, 'Router: EXCESSIVE_INPUT_AMOUNT');
+    IWETH(WETH).deposit{value: amounts[0]}();
+    assert(
+      IWETH(WETH).transfer(
+        Library.pairFor(factory, path[0], path[1]),
+        amounts[0]
+      )
+    );
+    _swap(amounts, path, to);
+    if (msg.value > amounts[0])
+      TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]); // refund dust eth, if any
+  }
+
+  // **** SWAP ****
+  // requires the initial amount to have already been sent to the first pair
+  function _swap(
+    uint[] memory amounts,
+    address[] memory path,
+    address _to
+  ) private {
+    for (uint256 i; i < path.length - 1; i++) {
+      (address input, address output) = (path[i], path[i + 1]);
+      (address token0, ) = Library.sortTokens(input, output);
+      uint256 amountOut = amounts[i + 1];
+      (uint256 amount0Out, uint256 amount1Out) = input == token0
+        ? (uint256(0), amountOut)
+        : (amountOut, uint256(0));
+      address to = i < path.length - 2
+        ? Library.pairFor(factory, output, path[i + 2])
+        : _to;
+      IPair(Library.pairFor(factory, input, output)).swap(
+        amount0Out,
+        amount1Out,
+        to,
+        new bytes(0)
+      );
+    }
   }
 }

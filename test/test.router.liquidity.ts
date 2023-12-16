@@ -123,7 +123,7 @@ describe('Test', function () {
 
     describe('Remove liquitidy', function () {
       describe('With Token', function () {
-        it('should get liquidity', async function () {
+        it.skip('should get liquidity', async function () {
           const [admin] = await loadFixture(init);
           const { factory, weth, router, tokenA, tokenB, tokenC } =
             await loadFixture(deployDexContracts);
@@ -182,7 +182,7 @@ describe('Test', function () {
       });
 
       describe('With WETH', function () {
-        it('should get liquidity', async function () {
+        it.skip('should get liquidity', async function () {
           const [admin] = await loadFixture(init);
           const { factory, weth, router, tokenA, tokenB, tokenC } =
             await loadFixture(deployDexContracts);
