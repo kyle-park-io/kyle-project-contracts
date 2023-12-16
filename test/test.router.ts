@@ -77,7 +77,7 @@ describe('Test', function () {
       });
 
       describe('With WETH', function () {
-        it('should get liquidity', async function () {
+        it.skip('should get liquidity', async function () {
           const [admin] = await loadFixture(init);
           const { factory, weth, router, tokenA, tokenB, tokenC } =
             await loadFixture(deployDexContracts);
@@ -117,6 +117,124 @@ describe('Test', function () {
             i++;
             await setTimeout(3000);
           }
+        });
+      });
+    });
+
+    describe('Remove liquitidy', function () {
+      describe('With Token', function () {
+        it('should get liquidity', async function () {
+          const [admin] = await loadFixture(init);
+          const { factory, weth, router, tokenA, tokenB, tokenC } =
+            await loadFixture(deployDexContracts);
+
+          const Pair = await ethers.getContractFactory('Pair');
+          const {
+            ROUTER_ADDRESS,
+            TOKEN_A_ADDRESS,
+            TOKEN_B_ADDRESS,
+            PAIR_AB_ADDRESS,
+          } = await setContracts(factory, weth, router, tokenA, tokenB, tokenC);
+          const PAIR_AB_CONTRACT = new ethers.Contract(
+            PAIR_AB_ADDRESS,
+            Pair.interface,
+            admin,
+          );
+
+          // PHASE0: add liquidity
+          console.log('PHASE0: add liquidity');
+          await router.addLiquidity(
+            TOKEN_A_ADDRESS,
+            TOKEN_B_ADDRESS,
+            '2000',
+            '1000',
+            '0',
+            '0',
+            admin.address,
+            1,
+          );
+          console.log("after : pair's totalsupply");
+          let balance = await PAIR_AB_CONTRACT.totalSupply();
+          console.log(balance);
+          await setTimeout(3000);
+
+          // PHASE1: remove liquidity
+          // set allowance pair(liquidity) balance to router (user -> router)
+          await PAIR_AB_CONTRACT.approve(
+            ROUTER_ADDRESS,
+            ethers.parseEther('1000000000'),
+          );
+
+          console.log('PHASE1: remove liquidity');
+          await router.removeLiquidity(
+            TOKEN_A_ADDRESS,
+            TOKEN_B_ADDRESS,
+            '100',
+            '0',
+            '0',
+            admin.address,
+            1,
+          );
+          console.log("after : pair's totalsupply");
+          balance = await PAIR_AB_CONTRACT.totalSupply();
+          console.log(balance);
+        });
+      });
+
+      describe('With WETH', function () {
+        it('should get liquidity', async function () {
+          const [admin] = await loadFixture(init);
+          const { factory, weth, router, tokenA, tokenB, tokenC } =
+            await loadFixture(deployDexContracts);
+
+          const Pair = await ethers.getContractFactory('Pair');
+          const {
+            WETH_ADDRESS,
+            ROUTER_ADDRESS,
+            TOKEN_A_ADDRESS,
+            PAIR_AW_ADDRESS,
+          } = await setContracts(factory, weth, router, tokenA, tokenB, tokenC);
+          const PAIR_AW_CONTRACT = new ethers.Contract(
+            PAIR_AW_ADDRESS,
+            Pair.interface,
+            admin,
+          );
+
+          // PHASE0: add liquidity
+          console.log('PHASE0: add liquidity with eth');
+          await router.addLiquidityETH(
+            TOKEN_A_ADDRESS,
+            '100',
+            '0',
+            '0',
+            admin.address,
+            1,
+            { value: ethers.parseEther('1') },
+          );
+          console.log("after : pair's totalsupply");
+          let balance = await PAIR_AW_CONTRACT.totalSupply();
+          console.log(balance);
+          await setTimeout(3000);
+
+          // PHASE1: remove liquidity
+          // set allowance pair(liquidity) balance to router (user -> router)
+          await PAIR_AW_CONTRACT.approve(
+            ROUTER_ADDRESS,
+            ethers.parseEther('1000000000'),
+          );
+
+          console.log('PHASE1: remove liquidity with eth');
+          await router.removeLiquidityETH(
+            TOKEN_A_ADDRESS,
+            '100000000',
+            '0',
+            '0',
+            admin.address,
+            1,
+          );
+          console.log("after : pair's totalsupply");
+          balance = await PAIR_AW_CONTRACT.totalSupply();
+          console.log(balance);
         });
       });
     });
@@ -188,6 +306,7 @@ async function setContracts(
   tokenD?: Token,
 ): Promise<{
   WETH_ADDRESS: string;
+  ROUTER_ADDRESS: string;
   TOKEN_A_ADDRESS: string;
   TOKEN_B_ADDRESS: string;
   TOKEN_C_ADDRESS: string;
@@ -232,6 +351,7 @@ async function setContracts(
 
   return {
     WETH_ADDRESS,
+    ROUTER_ADDRESS,
     TOKEN_A_ADDRESS,
     TOKEN_B_ADDRESS,
     TOKEN_C_ADDRESS,

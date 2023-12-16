@@ -19,6 +19,11 @@ contract Router is IRouter {
     _;
   }
 
+  // TODO: set logic to receive, fallback function
+  receive() external payable {}
+
+  fallback() external payable {}
+
   constructor(address _factory, address _WETH) {
     factory = _factory;
     WETH = _WETH;
@@ -129,5 +134,54 @@ contract Router is IRouter {
         (amountA, amountB) = (amountAOptimal, amountBDesired);
       }
     }
+  }
+
+  // **** REMOVE LIQUIDITY ****
+  function removeLiquidity(
+    address tokenA,
+    address tokenB,
+    uint liquidity,
+    uint amountAMin,
+    uint amountBMin,
+    address to,
+    uint deadline
+  ) public override ensure(deadline) returns (uint amountA, uint amountB) {
+    address pair = Library.pairFor(factory, tokenA, tokenB);
+    Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+    (uint amount0, uint amount1) = IPair(pair).burn(to);
+    (address token0, ) = Library.sortTokens(tokenA, tokenB);
+    (amountA, amountB) = tokenA == token0
+      ? (amount0, amount1)
+      : (amount1, amount0);
+    require(amountA >= amountAMin, 'Router: INSUFFICIENT_A_AMOUNT');
+    require(amountB >= amountBMin, 'Router: INSUFFICIENT_B_AMOUNT');
+  }
+
+  function removeLiquidityETH(
+    address token,
+    uint liquidity,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline
+  )
+    public
+    override
+    ensure(deadline)
+    returns (uint amountToken, uint amountETH)
+  {
+    (amountToken, amountETH) = removeLiquidity(
+      token,
+      WETH,
+      liquidity,
+      amountTokenMin,
+      amountETHMin,
+      address(this),
+      deadline
+    );
+    // TODO: check logic
+    TransferHelper.safeTransfer(token, to, amountToken);
+    IWETH(WETH).withdraw(amountETH);
+    TransferHelper.safeTransferETH(to, amountETH);
   }
 }
