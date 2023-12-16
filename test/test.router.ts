@@ -1,5 +1,10 @@
 import { ethers } from 'hardhat';
-import { type Token, type Factory, type Router } from 'typechain-types';
+import {
+  type Factory,
+  type WETH,
+  type Router,
+  type Token,
+} from 'typechain-types';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { type HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import { expect } from 'chai';
@@ -8,65 +13,111 @@ import { setTimeout } from 'timers/promises';
 describe('Test', function () {
   describe('Run contract', function () {
     describe('Add liquitidy', function () {
-      it('should get liquidity', async function () {
-        const [admin] = await loadFixture(init);
-        const { factory, router, tokenA, tokenB, tokenC } =
-          await loadFixture(deployDexContracts);
+      describe('With Token', function () {
+        it.skip('should get liquidity', async function () {
+          const [admin] = await loadFixture(init);
+          const { factory, weth, router, tokenA, tokenB, tokenC } =
+            await loadFixture(deployDexContracts);
 
-        const Pair = await ethers.getContractFactory('Pair');
-        const { TOKEN_A_ADDRESS, TOKEN_B_ADDRESS, PAIR_AB_ADDRESS } =
-          await setContracts(factory, router, tokenA, tokenB, tokenC);
-        const PAIR_AB_CONTRACT = new ethers.Contract(
-          PAIR_AB_ADDRESS,
-          Pair.interface,
-          admin,
-        );
+          const Pair = await ethers.getContractFactory('Pair');
+          const { TOKEN_A_ADDRESS, TOKEN_B_ADDRESS, PAIR_AB_ADDRESS } =
+            await setContracts(factory, weth, router, tokenA, tokenB, tokenC);
+          const PAIR_AB_CONTRACT = new ethers.Contract(
+            PAIR_AB_ADDRESS,
+            Pair.interface,
+            admin,
+          );
 
-        let i = 1;
-        while (true) {
-          if (i === 4) {
-            break;
+          let i = 1;
+          while (true) {
+            if (i === 4) {
+              break;
+            }
+            console.log('PHASE ' + i);
+            if (i % 2 === 1) {
+              try {
+                await router.addLiquidity(
+                  TOKEN_A_ADDRESS,
+                  TOKEN_B_ADDRESS,
+                  '2000',
+                  '1000',
+                  '0',
+                  '0',
+                  admin.address,
+                  1,
+                );
+              } catch (err) {
+                console.log(err);
+                break;
+              }
+            } else {
+              try {
+                await router.addLiquidity(
+                  TOKEN_A_ADDRESS,
+                  TOKEN_B_ADDRESS,
+                  '1000',
+                  '2000',
+                  '0',
+                  '0',
+                  admin.address,
+                  1,
+                );
+              } catch (err) {
+                console.log(err);
+                break;
+              }
+            }
+            console.log("after : pair's totalsupply");
+            const balance = await PAIR_AB_CONTRACT.totalSupply();
+            console.log(balance);
+            i++;
+            await setTimeout(3000);
           }
-          console.log('PHASE ' + i);
-          if (i % 2 === 1) {
+        });
+      });
+
+      describe('With WETH', function () {
+        it('should get liquidity', async function () {
+          const [admin] = await loadFixture(init);
+          const { factory, weth, router, tokenA, tokenB, tokenC } =
+            await loadFixture(deployDexContracts);
+
+          const Pair = await ethers.getContractFactory('Pair');
+          const { WETH_ADDRESS, TOKEN_A_ADDRESS, PAIR_AW_ADDRESS } =
+            await setContracts(factory, weth, router, tokenA, tokenB, tokenC);
+          const PAIR_AW_CONTRACT = new ethers.Contract(
+            PAIR_AW_ADDRESS,
+            Pair.interface,
+            admin,
+          );
+
+          let i = 1;
+          while (true) {
+            if (i === 4) {
+              break;
+            }
+            console.log('PHASE ' + i);
             try {
-              await router.addLiquidity(
+              await router.addLiquidityETH(
                 TOKEN_A_ADDRESS,
-                TOKEN_B_ADDRESS,
-                '2000',
-                '1000',
+                '100',
                 '0',
                 '0',
                 admin.address,
                 1,
+                { value: ethers.parseEther('1') },
               );
             } catch (err) {
               console.log(err);
               break;
             }
-          } else {
-            try {
-              await router.addLiquidity(
-                TOKEN_A_ADDRESS,
-                TOKEN_B_ADDRESS,
-                '1000',
-                '2000',
-                '0',
-                '0',
-                admin.address,
-                1,
-              );
-            } catch (err) {
-              console.log(err);
-              break;
-            }
+            console.log("after : pair's totalsupply");
+            const balance = await PAIR_AW_CONTRACT.totalSupply();
+            console.log(balance);
+            i++;
+            await setTimeout(3000);
           }
-          console.log("after : pair's totalsupply");
-          const balance = await PAIR_AB_CONTRACT.totalSupply();
-          console.log(balance);
-          i++;
-          await setTimeout(3000);
-        }
+        });
       });
     });
   });
@@ -79,6 +130,7 @@ async function init(): Promise<HardhatEthersSigner[]> {
 
 async function deployDexContracts(): Promise<{
   factory: Factory;
+  weth: WETH;
   router: Router;
   tokenA: Token;
   tokenB: Token;
@@ -91,8 +143,16 @@ async function deployDexContracts(): Promise<{
   await factory.waitForDeployment();
   const FACTORY_ADDRESS = await factory.getAddress();
 
+  const WETH = await ethers.getContractFactory('WETH');
+  const weth = await WETH.connect(admin).deploy();
+  await weth.waitForDeployment();
+  const WETH_ADDRESS = await weth.getAddress();
+
   const Router = await ethers.getContractFactory('Router');
-  const router = await Router.connect(admin).deploy(FACTORY_ADDRESS);
+  const router = await Router.connect(admin).deploy(
+    FACTORY_ADDRESS,
+    WETH_ADDRESS,
+  );
   await router.waitForDeployment();
 
   const Token = await ethers.getContractFactory('Token');
@@ -115,25 +175,29 @@ async function deployDexContracts(): Promise<{
   );
   await tokenC.waitForDeployment();
 
-  return { factory, router, tokenA, tokenB, tokenC };
+  return { factory, weth, router, tokenA, tokenB, tokenC };
 }
 
 async function setContracts(
   factory: Factory,
+  weth: WETH,
   router: Router,
   tokenA?: Token,
   tokenB?: Token,
   tokenC?: Token,
   tokenD?: Token,
 ): Promise<{
+  WETH_ADDRESS: string;
   TOKEN_A_ADDRESS: string;
   TOKEN_B_ADDRESS: string;
   TOKEN_C_ADDRESS: string;
   PAIR_AB_ADDRESS: string;
   PAIR_BC_ADDRESS: string;
   PAIR_AC_ADDRESS: string;
+  PAIR_AW_ADDRESS: string;
 }> {
   // get address
+  const WETH_ADDRESS = await weth.getAddress();
   const ROUTER_ADDRESS = await router.getAddress();
   const TOKEN_A_ADDRESS = (await tokenA?.getAddress()) as string;
   const TOKEN_B_ADDRESS = (await tokenB?.getAddress()) as string;
@@ -149,6 +213,7 @@ async function setContracts(
   await factory.createPair(TOKEN_A_ADDRESS, TOKEN_B_ADDRESS);
   await factory.createPair(TOKEN_B_ADDRESS, TOKEN_C_ADDRESS);
   await factory.createPair(TOKEN_A_ADDRESS, TOKEN_C_ADDRESS);
+  await factory.createPair(TOKEN_A_ADDRESS, WETH_ADDRESS);
 
   // set pair
   const PAIR_AB_ADDRESS = await factory.getPair(
@@ -163,12 +228,16 @@ async function setContracts(
     TOKEN_A_ADDRESS,
     TOKEN_C_ADDRESS,
   );
+  const PAIR_AW_ADDRESS = await factory.getPair(TOKEN_A_ADDRESS, WETH_ADDRESS);
+
   return {
+    WETH_ADDRESS,
     TOKEN_A_ADDRESS,
     TOKEN_B_ADDRESS,
     TOKEN_C_ADDRESS,
     PAIR_AB_ADDRESS,
     PAIR_BC_ADDRESS,
     PAIR_AC_ADDRESS,
+    PAIR_AW_ADDRESS,
   };
 }

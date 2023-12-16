@@ -6,19 +6,22 @@ import './libraries/TransferHelper.sol';
 import './interfaces/IRouter.sol';
 import './interfaces/IPair.sol';
 import './interfaces/IFactory.sol';
+import './interfaces/IWETH.sol';
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 contract Router is IRouter {
   address public immutable factory;
+  address public immutable WETH;
 
   modifier ensure(uint256 deadline) {
     // require(deadline >= block.timestamp, "Router: EXPIRED");
     _;
   }
 
-  constructor(address _factory) {
+  constructor(address _factory, address _WETH) {
     factory = _factory;
+    WETH = _WETH;
   }
 
   function addLiquidity(
@@ -51,6 +54,38 @@ contract Router is IRouter {
     TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
     // default: to == msg.sender
     liquidity = IPair(pair).mint(to);
+  }
+
+  function addLiquidityETH(
+    address token,
+    uint amountTokenDesired,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline
+  )
+    external
+    payable
+    override
+    ensure(deadline)
+    returns (uint amountToken, uint amountETH, uint liquidity)
+  {
+    (amountToken, amountETH) = _addLiquidity(
+      token,
+      WETH,
+      amountTokenDesired,
+      msg.value,
+      amountTokenMin,
+      amountETHMin
+    );
+    address pair = Library.pairFor(factory, token, WETH);
+    TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
+    IWETH(WETH).deposit{value: amountETH}();
+    assert(IWETH(WETH).transfer(pair, amountETH));
+    // default: to = msg.sender
+    liquidity = IPair(pair).mint(to);
+    if (msg.value > amountETH)
+      TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH); // refund dust eth, if any
   }
 
   // **** ADD LIQUIDITY ****
