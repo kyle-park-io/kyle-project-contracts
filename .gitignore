@@ -1,6 +1,8 @@
 node_modules
 *.log*
 .env
+config
+accounts.txt
 artifacts
 cache
 typechain-types

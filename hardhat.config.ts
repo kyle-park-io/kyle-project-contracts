@@ -3,8 +3,9 @@ import '@nomicfoundation/hardhat-toolbox';
 // import "@openzeppelin/hardhat-upgrades";
 import * as dotenv from 'dotenv';
 dotenv.config();
+import { userConfig } from './src/accounts';
 
-const HARDHAT_DEPLOYER_PRIVATE_KEY = process.env.HARDHAT_DEPLOYER_PRIVATE_KEY;
+const GANACHE_DEPLOYER_PRIVATE_KEY = process.env.GANACHE_DEPLOYER_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -18,12 +19,16 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+    },
     hardhat: {
       chainId: 1337,
+      accounts: userConfig,
     },
     ganache: {
       url: 'http://127.0.0.1:7545',
-      accounts: [HARDHAT_DEPLOYER_PRIVATE_KEY as string],
+      accounts: [GANACHE_DEPLOYER_PRIVATE_KEY as string],
     },
   },
 };

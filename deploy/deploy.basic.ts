@@ -1,5 +1,6 @@
 import { ethers } from 'hardhat';
 import fs from 'fs';
+import path from 'path';
 
 async function main(): Promise<void> {
   try {
@@ -17,7 +18,19 @@ async function main(): Promise<void> {
     };
     const jsonString = JSON.stringify(result);
 
-    await fs.promises.writeFile('config/Basic.contract.json', jsonString);
+    const configPath = path.resolve('config');
+
+    if (!fs.existsSync(configPath)) {
+      fs.mkdirSync(configPath, { recursive: true });
+      console.log(`Folder created at: ${configPath}`);
+    } else {
+      console.log(`Folder already exists at: ${configPath}`);
+    }
+
+    await fs.promises.writeFile(
+      `${configPath}/Basic.contract.json`,
+      jsonString,
+    );
   } catch (err) {
     console.error(err);
   }
