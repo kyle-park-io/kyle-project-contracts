@@ -4,7 +4,7 @@ set -e
 
 IMAGE_TAG=gcr.io/kyle-server-402706/hardhat-node:0.0.1
 # --no-cache
-docker buildx build --no-cache --platform linux/amd64 --build-arg=PROGRAM_VER=0.0.1 -t $IMAGE_TAG .
+docker buildx build --platform linux/amd64 --build-arg=PROGRAM_VER=0.0.1 -t $IMAGE_TAG .
 docker push $IMAGE_TAG
 
 IMAGE_TAG_LATEST=gcr.io/kyle-server-402706/hardhat-node:latest

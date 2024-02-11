@@ -3,9 +3,14 @@ import fs from 'fs';
 import { setTimeout } from 'timers/promises';
 
 async function main(): Promise<void> {
-  void deploy('tokenA', 'ABC', '100000000');
+  void deploy('tokenA', 'ABC', '1000000000');
   await setTimeout(3000);
-  void deploy('tokenB', 'DEF', '100000000');
+  void deploy('tokenB', 'DEF', '1000000000');
+  await setTimeout(3000);
+  void deploy('tokenC', 'GHI', '1000000000');
+  await setTimeout(3000);
+  void deploy('tokenD', 'JKL', '1000000000');
+  await setTimeout(3000);
 }
 
 async function deploy(name, symbol, totalSupply): Promise<void> {

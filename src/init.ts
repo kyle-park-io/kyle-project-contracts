@@ -60,7 +60,8 @@ hardhatNode.stdout.on('data', (data) => {
   }
 
   if (accounts.length === 20) {
-    for (let i = 1; i < accounts.length; i++) {
+    // for (let i = 1; i < accounts.length; i++) {
+    for (let i = 1; i <= 3; i++) {
       const result: Result = {
         index: i,
         address: accounts[i],
@@ -73,7 +74,7 @@ hardhatNode.stdout.on('data', (data) => {
     privateKey.length = 0;
 
     const save = JSON.stringify(resultArray, undefined, 2);
-    fs.writeFileSync('accounts.txt', save);
+    fs.writeFileSync('accounts.json', save);
     console.log('accounts info save complete!');
   }
 });

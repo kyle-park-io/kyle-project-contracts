@@ -7,7 +7,7 @@ interface IFactory {
     address indexed token0,
     address indexed token1,
     address pair,
-    uint256
+    uint256 index
   );
 
   // create2

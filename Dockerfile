@@ -4,7 +4,9 @@ FROM node:16-slim
 
 # install git
 RUN apt-get update && apt-get install -y git \
-  vim
+  vim \
+  curl \
+  jq
 
 # set dir
 WORKDIR /usr/src/app
@@ -26,10 +28,12 @@ COPY contracts ./contracts
 COPY deploy ./deploy
 COPY src ./src
 COPY .env ./.env
+COPY tokens.json ./tokens.json
 
 # # run deploy script
 COPY scripts ./scripts
 # RUN chmod +x scripts/deploy.sh && ./scripts/deploy.sh
+RUN chmod -R +x scripts
 
 # # run server
 RUN chmod +x scripts/init.sh
