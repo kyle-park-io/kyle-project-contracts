@@ -19,13 +19,16 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    // gke localhost
     localhost: {
       url: 'http://127.0.0.1:8545',
     },
+    // localhost
     hardhat: {
       chainId: 1337,
       accounts: userConfig,
     },
+    // ganache
     ganache: {
       url: 'http://127.0.0.1:7545',
       accounts: [GANACHE_DEPLOYER_PRIVATE_KEY as string],
