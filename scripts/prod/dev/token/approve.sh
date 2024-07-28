@@ -1,17 +1,18 @@
-token=$1
-address=$2
+sender=$1
+token=$2
+router=$3
 
 result=$(
   curl -X 'POST' \
-    'http://localhost:8080/api/common/submit' \
+    'http://localhost:8080/api-dex/api/common/submit' \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
-  \"userName\": \"admin\",
+  \"userAddress\": \"${sender}\",
   \"contractAddress\": \"${token}\",
-  \"function\": \"transfer\",
+  \"function\": \"approve\",
   \"args\": [
-		\"${address}\",
+		\"${router}\",
 		\"10000000\"
   ]
 }"

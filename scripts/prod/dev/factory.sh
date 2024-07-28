@@ -1,6 +1,6 @@
 weth=$(
   curl -X 'GET' \
-    'http://localhost:8080/api/utils/getWETH' \
+    'http://localhost:8080/api-dex/api/utils/getWETH' \
     -H 'accept: text/plain'
 )
 echo weth = $weth

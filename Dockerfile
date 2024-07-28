@@ -31,7 +31,7 @@ COPY .env ./.env
 COPY tokens.json ./tokens.json
 
 # # run deploy script
-COPY scripts ./scripts
+COPY scripts/prod ./scripts
 # RUN chmod +x scripts/deploy.sh && ./scripts/deploy.sh
 RUN chmod -R +x scripts
 

@@ -1,6 +1,6 @@
 router=$(
   curl -X 'GET' \
-    'http://localhost:8080/api/utils/getRouter' \
+    'http://localhost:8080/api-dex/api/utils/getRouter' \
     -H 'accept: text/plain'
 )
 echo router = $router
