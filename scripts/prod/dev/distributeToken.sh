@@ -1,7 +1,10 @@
+network='hardhat'
+
 router=$(
-  curl -X 'GET' \
+  curl -G \
     'http://localhost:8080/api-dex/api/utils/getRouter' \
-    -H 'accept: text/plain'
+    -H 'accept: text/plain' \
+    --data-urlencode "network=${network}"
 )
 echo router = $router
 

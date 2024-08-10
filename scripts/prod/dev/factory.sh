@@ -1,7 +1,10 @@
+network='hardhat'
+
 weth=$(
-  curl -X 'GET' \
+  curl -G \
     'http://localhost:8080/api-dex/api/utils/getWETH' \
-    -H 'accept: text/plain'
+    -H 'accept: text/plain' \
+    --data-urlencode "network=${network}"
 )
 echo weth = $weth
 
