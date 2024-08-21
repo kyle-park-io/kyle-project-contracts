@@ -36,8 +36,13 @@ cat "./accounts.json" | jq -c '.[] | {index: .index, address: .address}' | while
     tokenAIndex=$(echo "$item" | jq -r '.tokenIndex')
     tokenA=$(echo "$item" | jq -r '.tokenAddress')
 
+    value=10
+    base=10
+    exponent=18
+    eth=$(echo "$value*$base^$exponent" | bc)
+
     echo call addLiquidityETH
-    ./scripts/dev/addLiquidity/addLiquidityETH.sh $tokenA 5000 10 $address
+    ./scripts/dev/addLiquidity/addLiquidityETH.sh $tokenA 5000 $eth $address
     sleep 1
   done
 done

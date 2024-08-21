@@ -6,7 +6,8 @@ FROM node:16-slim
 RUN apt-get update && apt-get install -y git \
   vim \
   curl \
-  jq
+  jq \
+  bc
 
 # set dir
 WORKDIR /usr/src/app
