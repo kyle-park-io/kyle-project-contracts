@@ -61,7 +61,7 @@ hardhatNode.stdout.on('data', (data) => {
 
   if (accounts.length === 20) {
     // for (let i = 1; i < accounts.length; i++) {
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 5; i++) {
       const result: Result = {
         index: i,
         address: accounts[i],

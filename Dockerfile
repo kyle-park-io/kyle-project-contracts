@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y git \
   vim \
   curl \
   jq \
-  bc
+  bc \
+  bash
 
 # set dir
 WORKDIR /usr/src/app

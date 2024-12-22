@@ -9,6 +9,7 @@ npx ts-node src/init.ts &
 # run
 ./scripts/dev/distributeToken.sh
 ./scripts/dev/factory.sh
-./scripts/dev/dex.sh
+# ./scripts/dev/dex.sh
+./scripts/dev/dex2.sh
 
 wait
