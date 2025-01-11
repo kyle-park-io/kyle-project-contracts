@@ -9,6 +9,7 @@ result=$(
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
+  \"network\": \"hardhat\",
   \"userAddress\": \"${user}\",
   \"contractName\": \"Router\",
   \"function\": \"addLiquidityETH\",

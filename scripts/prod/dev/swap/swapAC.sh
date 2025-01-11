@@ -3,6 +3,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
+  "network": "hardhat",
   "userName": "user1",
   "contractName": "Router",
   "function": "swapExactTokensForTokens",

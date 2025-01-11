@@ -7,6 +7,7 @@ result=$(
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "{
+  \"network\": \"hardhat\",
   \"userName\": \"admin\",
   \"contractName\": \"Factory\",
   \"function\": \"createPair\",
