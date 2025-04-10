@@ -79,8 +79,8 @@ contract Pair is IPair, KyleERC20 {
     uint112 _reserve1
   ) private {
     // require(
-    //     balance0 <= uint112(-1) && balance1 <= uint112(-1),
-    //     "Error: OVERFLOW"
+    //   balance0 <= uint112(-1) && balance1 <= uint112(-1),
+    //   'Error: OVERFLOW'
     // );
     uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
     uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
