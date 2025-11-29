@@ -14,14 +14,8 @@ CONTEXT_PATH=$SCRIPT_DIR
 
 set -e
 
-# delete existing image
-# untag
-gcloud artifacts docker tags delete $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$TAG --quiet || true
-gcloud artifacts docker tags delete $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$TAG_LATEST --quiet || true
-# delete
-# --filter="tags:$TAG" --format="get(DIGEST)" --limit=1
-DIGEST=$(gcloud artifacts docker images list $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY --filter="PACKAGE: $IMAGE" --format="get(DIGEST)" --limit=1)
-gcloud artifacts docker images delete $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE@$DIGEST --quiet || true
+# delete all images with tags (this will automatically handle dependencies)
+gcloud artifacts docker images delete $LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE --delete-tags --quiet || true
 
 # push 0.0.1
 # IMAGE_TAG=me-west1-docker.pkg.dev/kyle-server-402706/kyle-registry/dex-app-server:0.0.1

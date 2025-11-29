@@ -1,6 +1,6 @@
 ## prod stage
 # node version
-FROM node:16-slim
+FROM node:22-slim
 
 # install git
 RUN apt-get update && apt-get install -y git \
