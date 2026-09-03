@@ -1,5 +1,5 @@
 // import { Client } from 'ssh2';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs-extra';
 
 // const connSettings = {
@@ -40,7 +40,19 @@ const privateKey: string[] = [];
 const resultArray: Result[] = [];
 
 // run hardhat node
-const hardhatNode = exec('npx hardhat node');
+//
+// `spawn`, not `exec`. exec buffers the child's stdout in memory and kills the
+// child once it passes maxBuffer (1 MB by default), which is what had been
+// happening here: the dex backend's listeners poll the RPC, hardhat logs a line
+// per call, and roughly every hundred minutes the buffer filled and node
+// terminated the child. `close` then fired with a null code — the signature of a
+// signal — the `wait` in scripts/init.sh returned, and the container exited 0.
+// Kubernetes read that as Completed and restarted it, ~14 times a day, each
+// restart leaving another containerd snapshot behind on the node.
+//
+// This code already consumes stdout as a stream, so nothing needs exec's
+// buffering. spawn streams without accumulating.
+const hardhatNode = spawn('npx', ['hardhat', 'node'], { shell: true });
 
 if (hardhatNode.stdout === null || hardhatNode.stderr === null) {
   console.log(`process exit!`);
@@ -83,6 +95,14 @@ hardhatNode.stderr.on('data', (data) => {
   console.error(`stderr: ${data}`);
 });
 
-hardhatNode.on('close', (code) => {
-  console.log(`child process exited with code ${code}`);
+// A signal is reported separately from an exit code: a child killed by one exits
+// with a null code, so logging the code alone said nothing about why it died.
+hardhatNode.on('close', (code, signal) => {
+  console.log(`child process exited with code ${code} signal ${signal}`);
+});
+
+// Without this, a spawn failure surfaced only as the process quietly ending.
+hardhatNode.on('error', (err) => {
+  console.error(`hardhat node failed: ${err.message}`);
+  process.exitCode = 1;
 });
